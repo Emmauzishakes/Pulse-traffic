@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 import logging
 from typing import List, Optional
 
-from schemas import TrafficPayload, TrafficResponse, PredictionResponse
-import models
-import prediction_logic
-from database import engine, SessionLocal
+from backend.api_schemas import TrafficPayload, TrafficResponse, PredictionResponse
+import core.models as models
+from backend import prediction_logic
+from core.database import engine, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
 
