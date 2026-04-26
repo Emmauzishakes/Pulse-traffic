@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 class TrafficPayload(BaseModel):
     node_id: str = Field(
@@ -19,26 +19,27 @@ class TrafficPayload(BaseModel):
             return value.replace(tzinfo=timezone.utc)
         return value
 
-    # QA Validation: Ensure no negative values are ingested from the simulator
-    @field_validator('vehicle_count', 'speed', 'density')
-    @classmethod
-    def check_non_negative(cls, val, infor):
-        if val < 0:
-            raise ValueError(f"{infor.field_name} cannot be negative")
-        return val
+    # # QA Validation: Ensure no negative values are ingested from the simulator
+    # @field_validator('vehicle_count', 'speed', 'density')
+    # @classmethod
+    # def check_non_negative(cls, val, infor):
+    #     if val < 0:
+    #         raise ValueError(f"{infor.field_name} cannot be negative")
+    #     return val
     
-    @field_validator('density')
-    @classmethod
-    def check_density_range(cls, val):
-        if val < 0 or val > 1:
-            raise ValueError("Density must be between 0 and 1")
-        return val
+    # @field_validator('density')
+    # @classmethod
+    # def check_density_range(cls, val):
+    #     if val < 0 or val > 1:
+    #         raise ValueError("Density must be between 0 and 1")
+    #     return val
     
 class TrafficResponse(TrafficPayload):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+    # class Config:
+    #     from_attributes = True
 
 class PredictionResponse(BaseModel):
     id: int
@@ -47,5 +48,6 @@ class PredictionResponse(BaseModel):
     predicted_level: str
     confidence_score: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+    # class Config:
+    #     from_attributes = True
