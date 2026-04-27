@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 import logging
 from typing import List, Optional
 
-from schemas import TrafficPayload, TrafficResponse, PredictionResponse
-import models
-import prediction_logic
-from database import engine, SessionLocal
+from backend.schemas import TrafficPayload, TrafficResponse, PredictionResponse
+import core.models as models
+from predictor.predictor import predict
+from core.database import engine, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -80,18 +80,17 @@ async def get_traffic_data(
 
     return records
 
-@app.post("/predict/{node_id}", response_model=PredictionResponse)
-async def create_prection(node_id: str, db: Session = Depends(get_db)):
-    try:
-        prediction = prediction_logic.generate_prediction(node_id, db)
+@app.post("/predict/{node_id}")
+async def create_prediction(node_id: str, db: Session = Depends(get_db)):
 
-        if not prediction:
-            raise HTTPException(status_code=404, detail="Not enough data to generate prediction")
-        
-        logger.info(f"Generated {prediction.predicted_level} congestion prediction for {node_id}")
-        return prediction
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Prediction generation failed: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal Server Error during prediction")
+    readings = db.query(models.TrafficReading)\
+        .filter(models.TrafficReading.node_id == node_id)\
+        .order_by(models.TrafficReading.timestamp.asc())\
+        .all()
+
+    if not readings:
+        raise HTTPException(status_code=404, detail="No data")
+
+    result = predict(readings, node_id)
+
+    return result

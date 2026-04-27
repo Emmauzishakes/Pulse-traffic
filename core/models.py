@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
-from database import Base
+from core.database import Base
 
 class TrafficReading(Base):
     __tablename__ = "traffic_readings"

@@ -42,11 +42,10 @@ POST /traffic-data
 ### Start the Backend
 
 ```bash
-cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 The API is available at `http://127.0.0.1:8000/docs`
@@ -61,7 +60,23 @@ python -m simulator.main --scenario normal
 
 The simulator will send one data point every 2 seconds. By default, it connects to `http://127.0.0.1:8000/traffic-data`.
 
----
+
+### Training the Prediction ML model
+
+In a separate terminal, from the project root, run:
+
+```bash
+python -m predictor.train_model 
+```
+After training the model, you can close this terminal.
+
+### Getting a prediction
+
+In a separate terminal, from the project root, run:
+
+```bash
+curl -X POST http://127.0.0.1:8000/predict/simulator
+````
 
 ## Simulator Modes
 
@@ -251,6 +266,15 @@ Backend (FastAPI)
   ├── Routes: /traffic-data (POST, GET)
   ├── Prediction: congestion prediction (1h forecast)
   └── Database: SQLite (traffic_data.db)
+
+Predictor (Python)
+  ├── Config: Defining thresholds and constants
+  ├── Fallback: Fallback logic used in case of Model errors
+  ├── Features: Feature Engineeering
+  ├── Ml_Model: Loading the ML model
+  ├── Predictor: Main entry interface; called by API
+  ├── Preprocessing: Cleaning and Validation
+  └── Train_model: Training the model
 ```
 
 ---
@@ -262,7 +286,7 @@ Backend (FastAPI)
 If you get `Connection refused`, ensure the backend is running:
 
 ```bash
-cd backend && uvicorn main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 ### Timeout errors
@@ -278,8 +302,7 @@ python -m simulator.main --timeout 15
 Ensure dependencies are installed:
 
 ```bash
-pip install -r simulator/requirements.txt
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Validation errors in logs
