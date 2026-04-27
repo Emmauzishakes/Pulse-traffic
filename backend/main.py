@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import logging
 from typing import List, Optional
 
-from backend.api_schemas import TrafficPayload, TrafficResponse, PredictionResponse
+from backend.schemas import TrafficPayload, TrafficResponse, PredictionResponse
 import core.models as models
 from predictor.predictor import predict
 from core.database import engine, SessionLocal
