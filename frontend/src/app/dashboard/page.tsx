@@ -1,33 +1,55 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import { useLiveNetwork } from '@/hooks/useTrafficData';
 import { StatCard } from '@/components/StatCard';
-import { Car, Activity, Map as MapIcon, Navigation } from 'lucide-react';
+import { Car, Activity, Map as MapIcon, Navigation, WifiOff } from 'lucide-react'; // Add WifiOff
 import MapWrapper from '@/components/Map/MapWrapper';
 import { DashboardCharts } from '@/components/Charts/DashboardCharts';
 
 export default function Dashboard() {
-  const { data: networkData, isLoading } = useLiveNetwork();
+  // 1. Destructure the isError flag
+  const { data: networkData, isLoading, isError } = useLiveNetwork();
+  const [focusedNode, setFocusedNode] = useState<{lat: number, lng: number} | null>(null);
 
-  if (isLoading) return <div className="min-h-screen bg-navy-950 flex items-center justify-center text-pulse-cyan">Syncing with simulator...</div>;
+  // 2. Only show the full-screen loader if we have NO data at all (initial load)
+  if (isLoading && !networkData) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-pulse-cyan animate-pulse">Syncing with simulator...</div>;
+  }
 
-  // Calculate Aggregates
   const totalVehicles = networkData?.reduce((acc, curr) => acc + curr.vehicle_count, 0) || 0;
   const avgSpeed = networkData ? Math.round(networkData.reduce((acc, curr) => acc + curr.speed, 0) / networkData.length) : 0;
   const avgDensity = networkData ? Math.round((networkData.reduce((acc, curr) => acc + curr.density, 0) / networkData.length) * 100) : 0;
   const hotspots = networkData?.filter(d => d.status === 'Jammed').length || 0;
 
   return (
-    <div className="min-h-screen bg-navy-950 text-white font-sans p-6">
+    <div className="min-h-screen bg-slate-900 text-white font-sans p-6">
+      
+      {/* NEW: 3. The Graceful Degradation Error Banner */}
+      {isError && (
+        <div className="mb-6 bg-pulse-red/10 border border-pulse-red/30 rounded-lg p-4 flex items-center gap-3 text-pulse-red">
+          <WifiOff size={24} className="animate-pulse" />
+          <div>
+            <h3 className="font-semibold text-sm">Telemetry Feed Offline</h3>
+            <p className="text-xs opacity-80 mt-0.5">
+              Connection to the Uvicorn backend lost. Displaying last known data. Attempting to reconnect...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <header className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Nairobi Network • Live</h1>
-          <p className="text-gray-400 text-sm">39 monitored junctions across 6 corridors.</p>
+          <p className="text-slate-400 text-sm">15 monitored junctions across 4 major corridors.</p>
         </div>
         <div className="flex items-center gap-4 text-sm">
-          <span className="flex items-center gap-2 bg-navy-900 border border-pulse-green/30 px-3 py-1 rounded-full text-pulse-green">
-            <span className="w-2 h-2 rounded-full bg-pulse-green animate-pulse"></span> Live
+          {/* Dynamically change the "Live" badge if offline */}
+          <span className={`flex items-center gap-2 bg-slate-800 border px-3 py-1 rounded-full ${
+            isError ? 'border-pulse-red/30 text-pulse-red' : 'border-pulse-green/30 text-pulse-green'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${isError ? 'bg-pulse-red' : 'bg-pulse-green animate-pulse'}`}></span> 
+            {isError ? 'Offline' : 'Live'}
           </span>
         </div>
       </header>
@@ -44,34 +66,31 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
         
         {/* Left: GIS Map */}
-        <div className="lg:col-span-2 bg-navy-900 border border-gray-800 rounded-xl overflow-hidden relative">
+        <div className="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden relative">
           <div className="absolute top-4 left-4 z-10 flex gap-2">
-            <span className="bg-navy-950/80 px-3 py-1 rounded-full border border-pulse-green text-pulse-green text-xs font-bold flex items-center gap-2"><span className="w-2 h-2 bg-pulse-green rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>Free</span>
-            <span className="bg-navy-950/80 px-3 py-1 rounded-full border border-pulse-yellow text-pulse-yellow text-xs font-bold flex items-center gap-2"><span className="w-2 h-2 bg-pulse-yellow rounded-full shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span>Slow</span>
-            <span className="bg-navy-950/80 px-3 py-1 rounded-full border border-pulse-red text-pulse-red text-xs font-bold flex items-center gap-2"><span className="w-2 h-2 bg-pulse-red rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>Jammed</span>
+            <span className="bg-slate-900/80 px-3 py-1 rounded-full border border-pulse-green text-pulse-green text-xs font-bold flex items-center gap-2"><span className="w-2 h-2 bg-pulse-green rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>Free</span>
+            <span className="bg-slate-900/80 px-3 py-1 rounded-full border border-pulse-yellow text-pulse-yellow text-xs font-bold flex items-center gap-2"><span className="w-2 h-2 bg-pulse-yellow rounded-full shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span>Slow</span>
+            <span className="bg-slate-900/80 px-3 py-1 rounded-full border border-pulse-red text-pulse-red text-xs font-bold flex items-center gap-2"><span className="w-2 h-2 bg-pulse-red rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>Jammed</span>
           </div>
           <div className="w-full h-full relative z-0">
-             {/* Insert the Map Wrapper here, passing in the live data */}
-             <MapWrapper data={networkData || null} />
+             <MapWrapper data={networkData || null} focusedNode={focusedNode} />
           </div>
         </div>
 
         {/* Right: Traffic Nodes List */}
-        <div className="bg-navy-900 border border-gray-800 rounded-xl flex flex-col overflow-hidden h-[600px]">
-          {/* Header */}
-          <div className="p-5 border-b border-gray-800 bg-navy-950/50">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl flex flex-col overflow-hidden h-[600px]">
+          <div className="p-5 border-b border-slate-700 bg-slate-900/50">
             <h2 className="text-white font-semibold text-lg">Traffic Nodes</h2>
-            <p className="text-gray-500 text-xs mt-1">{networkData?.length || 0} monitored intersections</p>
+            <p className="text-slate-400 text-xs mt-1">{networkData?.length || 0} monitored intersections</p>
           </div>
           
-          {/* Scrollable List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {networkData?.slice(0, 15).map((node) => (
               <div 
                 key={node.id} 
-                className="p-4 border-b border-gray-800/50 hover:bg-navy-800/50 transition-colors group"
+                onClick={() => setFocusedNode({ lat: node.meta.lat, lng: node.meta.lng })}
+                className="p-4 border-b border-slate-700/50 hover:bg-slate-700 transition-colors group cursor-pointer"
               >
-                {/* Top Row: Name and Badge */}
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-3">
                     <span className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${
@@ -79,12 +98,12 @@ export default function Dashboard() {
                       node.status === 'Slow' ? 'bg-pulse-yellow text-pulse-yellow' : 
                       'bg-pulse-red text-pulse-red'
                     }`}></span>
-                    <h4 className="text-gray-200 font-medium text-sm group-hover:text-white transition-colors">
+                    <h4 className="text-slate-200 font-medium text-sm group-hover:text-pulse-cyan transition-colors">
                       {node.meta.name}
                     </h4>
                   </div>
                   <span className={`text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded border ${
-                    node.status === 'Free' ? 'text-gray-400 border-gray-700 bg-navy-950' : 
+                    node.status === 'Free' ? 'text-slate-400 border-slate-600 bg-slate-900' : 
                     node.status === 'Slow' ? 'text-pulse-yellow border-pulse-yellow/30 bg-pulse-yellow/10' : 
                     'text-pulse-red border-pulse-red/30 bg-pulse-red/10'
                   }`}>
@@ -92,40 +111,31 @@ export default function Dashboard() {
                   </span>
                 </div>
 
-                {/* Middle Row: Corridor */}
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest ml-5 mb-3">
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest ml-5 mb-3">
                   {node.meta.corridor}
                 </p>
 
-                {/* Bottom Row: Metrics */}
-                <div className="flex justify-between text-xs text-gray-400 ml-5 pr-2">
+                <div className="flex justify-between text-xs text-slate-400 ml-5 pr-2">
                   <div className="flex flex-col">
-                    <span className="text-gray-300 font-medium">{node.vehicle_count}</span>
-                    <span className="text-[10px] text-gray-500">veh</span>
+                    <span className="text-slate-300 font-medium">{node.vehicle_count}</span>
+                    <span className="text-[10px] text-slate-500">veh</span>
                   </div>
                   <div className="flex flex-col text-center">
-                    <span className="text-gray-300 font-medium">{node.speed}</span>
-                    <span className="text-[10px] text-gray-500">km/h</span>
+                    <span className="text-slate-300 font-medium">{node.speed}</span>
+                    <span className="text-[10px] text-slate-500">km/h</span>
                   </div>
                   <div className="flex flex-col text-right">
-                    <span className="text-gray-300 font-medium">{Math.round(node.density * 100)}</span>
-                    <span className="text-[10px] text-gray-500">v/km</span>
+                    <span className="text-slate-300 font-medium">{Math.round(node.density * 100)}</span>
+                    <span className="text-[10px] text-slate-500">v/km</span>
                   </div>
                 </div>
               </div>
             ))}
-
-            {(!networkData || networkData.length === 0) && (
-              <div className="p-8 text-center text-gray-500 text-sm">
-                Waiting for simulator telemetry...
-              </div>
-            )}
           </div>
         </div>
 
       </div>
 
-      {/* Charts Section */}
       <DashboardCharts data={networkData || null} />
     </div>
   );

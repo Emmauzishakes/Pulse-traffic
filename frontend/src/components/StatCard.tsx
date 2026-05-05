@@ -17,7 +17,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, Icon
   };
 
   return (
-    <div className="bg-navy-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between h-full">
+    <div className="bg-slate-900 border border-gray-800 rounded-xl p-5 flex flex-col justify-between h-full">
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-gray-400 text-sm font-medium tracking-wider uppercase">{title}</h3>
         <div className={`p-2 rounded-lg ${colorMap[statusColor]}`}>

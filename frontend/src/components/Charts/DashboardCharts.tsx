@@ -42,7 +42,7 @@ export const DashboardCharts: React.FC<ChartProps> = ({ data }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
       
       {/* Left: Live Network Trends (Area Chart) */}
-      <div className="bg-navy-900 border border-gray-800 rounded-xl p-6 h-[350px] flex flex-col">
+      <div className="bg-slate-900 border border-gray-800 rounded-xl p-6 h-[350px] flex flex-col">
         <h3 className="font-semibold text-white mb-4">Live Network Trends</h3>
         <div className="flex-1 w-full min-h-0">
           <ResponsiveContainer width="100%" height="100%">

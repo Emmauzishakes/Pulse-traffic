@@ -225,3 +225,8 @@ __marimo__/
 # Database
 *.db
 
+
+node_modules/
+.next/
+# flowforecast-hub-lynet/
+flowforecast-hub-lynet/node_modules/
