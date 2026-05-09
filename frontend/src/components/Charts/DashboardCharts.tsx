@@ -18,22 +18,21 @@ export const DashboardCharts: React.FC<ChartProps> = ({ data }) => {
     .sort((a, b) => b.density - a.density)
     .slice(0, 6)
     .map(node => ({
-      name: node.meta.name.split(' ')[0], // Get just the first word (e.g., "Globe", "Bomas")
+      name: node.meta.name.split(' ')[0], 
       density: Math.round(node.density * 100),
       status: node.status
     }));
 
-  // 2. Prepare Trend Data (Simulating a timeline based on live data for visual accuracy)
-  // In a production app, you would fetch this from a /historical-aggregate endpoint.
+  // 2. Prepare Trend Data
   const now = new Date();
   const trendData = Array.from({ length: 15 }).map((_, i) => {
-    const time = new Date(now.getTime() - (14 - i) * 60000); // Past 15 mins
+    const time = new Date(now.getTime() - (14 - i) * 60000); 
     const avgSpeed = data.reduce((acc, curr) => acc + curr.speed, 0) / data.length;
     const avgDensity = (data.reduce((acc, curr) => acc + curr.density, 0) / data.length) * 100;
     
     return {
       time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      speed: Math.max(0, avgSpeed + (Math.random() * 4 - 2)), // slight jitter for realism
+      speed: Math.max(0, avgSpeed + (Math.random() * 4 - 2)), 
       density: Math.max(0, avgDensity + (Math.random() * 2 - 1))
     };
   });
@@ -42,9 +41,10 @@ export const DashboardCharts: React.FC<ChartProps> = ({ data }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
       
       {/* Left: Live Network Trends (Area Chart) */}
-      <div className="bg-slate-900 border border-gray-800 rounded-xl p-6 h-[350px] flex flex-col">
+      <div className="bg-slate-900 border border-gray-800 rounded-xl p-6 h-87.5 flex flex-col">
         <h3 className="font-semibold text-white mb-4">Live Network Trends</h3>
-        <div className="flex-1 w-full min-h-0">
+        {/* THE FIX: Replaced flex-1 with an explicit height wrapper */}
+        <div className="w-full h-65">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
               <defs>
@@ -72,9 +72,10 @@ export const DashboardCharts: React.FC<ChartProps> = ({ data }) => {
       </div>
 
       {/* Right: Top Hotspots (Bar Chart) */}
-      <div className="bg-navy-900 border border-gray-800 rounded-xl p-6 h-[350px] flex flex-col">
+      <div className="bg-navy-900 border border-gray-800 rounded-xl p-6 h-87.5 flex flex-col">
         <h3 className="font-semibold text-white mb-4">Top hotspots by density</h3>
-        <div className="flex-1 w-full min-h-0">
+        {/* THE FIX: Replaced flex-1 with an explicit height wrapper */}
+        <div className="w-full h-65">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={hotspotData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} barSize={40}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />

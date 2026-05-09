@@ -5,12 +5,24 @@
   --foreground: #171717;
 }
 
-@theme inline {
+@theme {
+  --color-pulse-cyan: #06b6d4;
+  --color-pulse-green: #22c55e;
+  --color-pulse-yellow: #eab308;
+  --color-pulse-red: #ef4444;
+  --color-pulse-cyanGlow: rgba(6, 182, 212, 0.5);
+
+  --color-navy-950: #0B1121;
+  --color-navy-900: #111827;
+  --color-navy-800: #1F2937;
+}
+
+/* @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+} */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -42,3 +54,21 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #374151; /* gray-700 */
 }
+
+
+/* .custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155; 
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569; 
+} */
