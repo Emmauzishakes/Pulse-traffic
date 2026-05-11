@@ -6,8 +6,6 @@ from sklearn.ensemble import RandomForestClassifier
 
 from predictor.features import create_features
 from .config import MODEL_PATH
-
-
 def build_pipeline():
     return Pipeline([
         ("scaler", StandardScaler()),

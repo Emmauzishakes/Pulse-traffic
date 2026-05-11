@@ -5,28 +5,24 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import logging
 from typing import List, Optional
 
 from schemas import TrafficPayload, TrafficResponse, PredictionResponse
 from core import models
-from predictor.predictor import predict
+from predictor.predictor import predict, predict_with_route
 from core.database import engine, SessionLocal
-# from routers import traffic, prediction
 
 models.Base.metadata.create_all(bind=engine)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-#Initializing fastAPI app
 app = FastAPI(
     title="Pulse Traffic API",
     description="Backend for simulated traffic data ingestion",
     version="1.0.0",
-    # openapi_tags=[
-    #     {"name": "ingestion", "description": "Endpoints for ingesting traffic data"}
-    # ]
 )
 
 app.add_middleware(
@@ -40,11 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# # ... your router includes remain below this
-# app.include_router(traffic.router)
-# app.include_router(prediction.router)
 
-# Dependency to get the database session for each request
 def get_db():
     db = SessionLocal()
     try:
@@ -52,7 +44,7 @@ def get_db():
     finally:
         db.close()
 
-# POST Endpoint to receive traffic data from the simulator
+
 @app.post("/traffic-data", status_code=status.HTTP_201_CREATED)
 async def ingest_traffic_data(payload: TrafficPayload, db: Session = Depends(get_db)):
     try:
@@ -79,12 +71,13 @@ async def ingest_traffic_data(payload: TrafficPayload, db: Session = Depends(get
         raise
     except Exception as e:
         db.rollback()
-        logger.error(f"System failure during ingestion: {str(e)} [cite: 10]")
+        logger.error(f"System failure during ingestion: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
-    
+
+
 @app.get("/traffic-data", response_model=List[TrafficResponse])
 async def get_traffic_data(
     skip: int = 0,
@@ -101,6 +94,7 @@ async def get_traffic_data(
 
     return records
 
+
 @app.post("/predict/{node_id}")
 async def create_prediction(node_id: str, db: Session = Depends(get_db)):
 
@@ -113,5 +107,51 @@ async def create_prediction(node_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No data")
 
     result = predict(readings, node_id)
+
+    return result
+
+
+@app.post("/predict/{node_id}/route")
+async def predict_with_alternatives(
+    node_id: str,
+    destination: str,
+    db: Session = Depends(get_db)
+):
+    readings = (
+        db.query(models.TrafficReading)
+        .filter(models.TrafficReading.node_id == node_id)
+        .order_by(models.TrafficReading.timestamp.asc())
+        .all()
+    )
+    if not readings:
+        raise HTTPException(status_code=404, detail=f"No data for node {node_id}")
+
+    latest_ids = (
+        db.query(func.max(models.TrafficReading.id))
+        .group_by(models.TrafficReading.node_id)
+        .all()
+    )
+    latest_readings = (
+        db.query(models.TrafficReading)
+        .filter(models.TrafficReading.id.in_([r[0] for r in latest_ids]))
+        .all()
+    )
+
+    def _quick_level(speed):
+        if speed < 20:  return "High"
+        if speed < 40:  return "Medium"
+        return "Low"
+
+    congestion_map = {
+        r.node_id: _quick_level(r.speed)
+        for r in latest_readings
+    }
+
+    result = predict_with_route(
+        readings=readings,
+        node_id=node_id,
+        destination=destination,
+        congestion_map=congestion_map,
+    )
 
     return result
